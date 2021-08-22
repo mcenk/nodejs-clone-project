@@ -1,58 +1,49 @@
 const express= require('express')
-const path = require('path')
 const app= express()
 const port = 3000
+const router=express.Router()
 const hostname= '127.0.0.1'
-const exphbs  = require('express-handlebars')
+const mongoose= require('mongoose')
+const Handlebars = require('handlebars')
+const expressHandlebars = require('express-handlebars');
+const fileUpload = require('express-fileupload');
+const generateDate= require('./helpers/generateDate').generateDate
 
+mongoose.connect('mongodb://localhost:27017/deneme', {
+    useNewUrlParser: true, 
+    useUnifiedTopology: true,
+    useCreateIndex:true
+});
 
+app.use(fileUpload())
 
-app.engine('handlebars', exphbs())
-app.set('view engine', 'handlebars')
-
-
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json())
 
 app.use(express.static('public'))
+const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access')
 
-app.get ('/', (req,res)=>{
+app.engine('handlebars', expressHandlebars({
+    handlebars: allowInsecurePrototypeAccess(Handlebars),
+    helpers: {generateDate:generateDate}
+}));
 
-    res.render('site/index')
+app.set('view engine', 'handlebars');
 
-})
+const main= require('./routes/main')
+const posts= require('./routes/posts')
+const { helpers } = require('handlebars')
+const users = require('./routes/users');
 
-app.get('/about', (req,res)=>{
-
-    res.render('site/about')
-})
-
-app.get('/blog', (req,res)=>{
-
-    res.render('site/blog')
-})
-
-app.get('/contact',(req,res)=>{
-
-    res.render('site/contact')
-})
-
-app.get('/login',(req,res)=>{
-
-    res.render('site/login')
-})
-
-app.get('/register',(req,res)=>{
-
-    res.render('site/register')
-})
-
-
-
-
-
-
+app.use('/',main)
+app.use('/posts',posts)
+app.use('/users',users)
 
 
 app.listen(port,hostname, ()=>{
 
 console.log(`Server Aktif, http://${hostname}: ${port} dinleniyor`)
 })     
+
+// middleware sirasi oldukca onemli bu konuyu atlama 
+// ayrica middleware bir islem yapilmadan once yapilmasi gerekenleri, gerekli kontrolleri yapmak amaciyla kullanilabilir 
